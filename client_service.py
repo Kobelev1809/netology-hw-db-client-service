@@ -153,7 +153,9 @@ class Database:
 
 
 if __name__ == '__main__':
-    db_name, user, password = 'client_db', 'postgres', 'KiaPostgre1809',
+    # Заполнить данные для подключения к БД
+    db_name, user, password = '_____', '_____', '______',
+    
     db = Database(db_name, user, password)
     print('Доступ к базе открыт:', '\n')
     
