@@ -113,7 +113,7 @@ class Database:
             print(*cur.fetchone())
         self.conn.commit()
 
-    def get_client_data(self, client_id: int) -> tuple:
+    def get_client_data(self, phone_number: int) -> tuple:
         with self.conn.cursor() as cur:
             cur.execute(
                 '''
@@ -121,9 +121,9 @@ class Database:
                   FROM clients c
                        LEFT JOIN phone_numbers pn
                        ON c.client_id = pn.client_id
-                WHERE c.client_id = %s;
+                WHERE pn.phone_number = %s;
                 ''',
-                (client_id,)
+                (phone_number,)
             )
             return cur.fetchone()
 
@@ -169,11 +169,11 @@ if __name__ == '__main__':
     db.add_phone_number('234322355', 3)
 
     print('\nДанные клиента №1 до изменения:')
-    print(*db.get_client_data(1))
+    print(*db.get_client_data('823943243'))
     print('\nМеняем имя клиента №1 на Ivan...')
     db.change_client_data(1, 'Ivan')
     print('\nДанные клиента №1 после изменения:')
-    print(*db.get_client_data(1))
+    print(*db.get_client_data('823943243'))
     print()
     db.show_all_data()
     db.del_phone_number('234234324')
