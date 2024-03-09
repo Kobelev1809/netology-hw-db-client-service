@@ -70,20 +70,17 @@ class Database:
             print(*cur.fetchone())
         self.conn.commit()
 
-    def change_client_data(self, client_id: int, new_name: str):
-        with self.conn.cursor() as cur:
-            cur.execute(
-                '''
-                   UPDATE clients
-                      SET first_name = %s
-                    WHERE client_id = %s
-                RETURNING first_name;
-                ''',
-                (new_name, client_id)
-            )
-            print('Новое имя клиента:', end=' ')
-            print(*cur.fetchone())
-        self.conn.commit()
+    def change_client_data(self,
+                           client_id: int,
+                           new_name='',
+                           new_surname='',
+                           new_email=''):
+        if new_name:
+            self._change_client_name(client_id, new_name)
+        if new_surname:
+            self._change_client_surname(client_id, new_surname)
+        if new_email:
+            self._change_client_email(client_id, new_email)
 
     def del_phone_number(self, phone_number: str):
         with self.conn.cursor() as cur:
@@ -113,7 +110,11 @@ class Database:
             print(*cur.fetchone())
         self.conn.commit()
 
-    def get_client_data(self, phone_number: int) -> tuple:
+    def get_clients_data(self,
+                        name='%%',
+                        surname='%%',
+                        email='%%',
+                        phone_number='%%') -> tuple:
         with self.conn.cursor() as cur:
             cur.execute(
                 '''
@@ -121,11 +122,15 @@ class Database:
                   FROM clients c
                        LEFT JOIN phone_numbers pn
                        ON c.client_id = pn.client_id
-                WHERE pn.phone_number = %s;
+                WHERE c.first_name LIKE %s
+                  AND c.last_name LIKE %s
+                  AND c.email LIKE %s
+                  AND pn.phone_number LIKE %s;
                 ''',
-                (phone_number,)
+                (name, surname, email, phone_number)
             )
-            return cur.fetchone()
+            result = cur.fetchall()
+            return (None,) if result is None else result
 
     def show_all_data(self):
         with self.conn.cursor() as cur:
@@ -147,6 +152,51 @@ class Database:
                 print('-' * 100)
         self.conn.commit()
 
+    def _change_client_name(self, client_id: int, new_name: str):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                '''
+                   UPDATE clients
+                      SET first_name = %s
+                    WHERE client_id = %s
+                RETURNING first_name;
+                ''',
+                (new_name, client_id)
+            )
+            print('Новое имя клиента:', end=' ')
+            print(*cur.fetchone())
+        self.conn.commit()
+
+    def _change_client_surname(self, client_id: int, new_surname: str):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                '''
+                   UPDATE clients
+                      SET last_name = %s
+                    WHERE client_id = %s
+                RETURNING last_name;
+                ''',
+                (new_surname, client_id)
+            )
+            print('Новая фамилия клиента:', end=' ')
+            print(*cur.fetchone())
+        self.conn.commit()
+    
+    def _change_client_email(self, client_id: int, new_email: str):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                '''
+                   UPDATE clients
+                      SET email = %s
+                    WHERE client_id = %s
+                RETURNING email;
+                ''',
+                (new_email, client_id)
+            )
+            print('Новый email клиента:', end=' ')
+            print(*cur.fetchone())
+        self.conn.commit()
+    
     def __del__(self) -> None:
         self.conn.close()
         print('База закрыта')
@@ -154,7 +204,7 @@ class Database:
 
 if __name__ == '__main__':
     # Заполнить данные для подключения к БД
-    db_name, user, password = '_____', '_____', '______',
+    db_name, user, password = 'client_db', 'postgres', 'KiaPostgre1809',
     
     db = Database(db_name, user, password)
     print('Доступ к базе открыт:', '\n')
@@ -171,11 +221,14 @@ if __name__ == '__main__':
     db.add_phone_number('234322355', 3)
 
     print('\nДанные клиента №1 до изменения:')
-    print(*db.get_client_data('823943243'))
-    print('\nМеняем имя клиента №1 на Ivan...')
-    db.change_client_data(1, 'Ivan')
+    print(*db.get_clients_data(name='Igor'))
+    db.change_client_data(client_id=1,
+                          new_surname='FFiirrsstt',
+                          new_email='sdfsd@yandex.ru')
+    db.change_client_data(client_id=1, new_name='Grisha')
+    db.change_client_data(client_id=1)
     print('\nДанные клиента №1 после изменения:')
-    print(*db.get_client_data('823943243'))
+    print(*db.get_clients_data(name='Grisha'))
     print()
     db.show_all_data()
     db.del_phone_number('234234324')
